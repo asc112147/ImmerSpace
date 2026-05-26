@@ -85,7 +85,7 @@ function init() {
 
     // 綁定 UI 事件
     document.getElementById('btn-restart').addEventListener('click', () => location.reload());
-    document.getElementById('btn-close').addEventListener('click', () => window.history.back());
+    document.getElementById('btn-close').addEventListener('click', () => window.location.href = 'menu.html');
     document.getElementById('btn-exit').addEventListener('click', handleExit);
     document.getElementById('btn-stop-track').addEventListener('click', (e) => { closeInfo(); e.stopPropagation(); });
     document.getElementById('btn-prev').addEventListener('click', prevPlanet);

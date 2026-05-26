@@ -68,9 +68,9 @@ function enter3D() {
         document.body.appendChild(overlay);
         document.body.style.opacity = '1';
 
-        // 3秒後直接過渡到主要的天文展覽系統
+        // 3秒後過渡到傳送中心選單
         setTimeout(() => {
-            window.location.href = 'space.html';
+            window.location.href = 'menu.html';
         }, 3000);
     }, 1000);
 }
