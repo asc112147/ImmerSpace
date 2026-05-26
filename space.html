@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmerSpace-太陽系探索</title>
+    <!-- 引入外部 CSS 引擎進行基礎 Reset 與全局控制 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- 原本的繁瑣 Class 已經整併進自定義的 style.css 中 -->
+    <link rel="stylesheet" href="space.css">
+</head>
+
+<body>
+
+    <div id="loading-screen" class="loading-screen">
+        <div class="loader-spinner">
+            <div class="spinner-track"></div>
+            <div class="spinner-head"></div>
+        </div>
+        <div id="loading-text">正在載入星圖資源 0%</div>
+    </div>
+
+    <!-- 結算畫面 -->
+    <div id="summary-screen">
+        <div class="summary-subtitle">任務日誌已歸檔</div>
+        <h1 class="summary-title">探 索 總 結</h1>
+
+        <div class="summary-stats-container">
+            <div class="stat-card">
+                <div class="stat-label">星體掃描總數</div>
+                <div id="final-count" class="stat-value">0</div>
+            </div>
+            <div class="stat-card border-accent">
+                <div class="stat-label text-accent">系統覆蓋率</div>
+                <div id="final-rate" class="stat-value text-accent">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">當前探險等級</div>
+                <div id="final-rank" class="stat-value text-yellow">--</div>
+            </div>
+        </div>
+
+        <div class="summary-actions">
+            <button id="btn-restart" class="action-btn primary-btn">重新啟動</button>
+            <button id="btn-close" class="action-btn secondary-btn">返回選單</button>
+        </div>
+    </div>
+
+    <div class="ui-overlay pointer-events-none">
+
+        <!-- 頂端置中：系統閒置狀態與結束按鈕 -->
+        <div class="hud-center interactable">
+            <div class="glass hud-panel">
+                <button id="btn-exit" class="exit-btn">
+                    <i class="fas fa-power-off"></i> 結束
+                </button>
+                <div class="divider"></div>
+                <div class="status-indicator">
+                    <i class="fas fa-crosshairs mr-2"></i> <span id="current-focus">系統閒置中</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右上角：存檔進度 -->
+        <div class="hud-right interactable">
+            <div class="glass hud-panel progress-panel">
+                <div class="progress-info">
+                    <div class="progress-label">存檔進度</div>
+                    <div id="progress-text" class="progress-value">0 / 10</div>
+                </div>
+                <div class="progress-track">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部置中：時間加速控制 -->
+        <div class="hud-bottom-center interactable">
+            <div class="glass hud-panel time-panel">
+                <div class="time-header">
+                    <i class="fas fa-clock"></i> <span>時空流速控制</span>
+                </div>
+                <input type="range" id="time-slider" min="-5" max="5" step="0.1" value="1" class="custom-slider">
+                <div id="time-display" class="time-display">1.0x</div>
+                <div class="time-presets">
+                    <button class="preset-btn" data-speed="-5">-5x</button>
+                    <button class="preset-btn" data-speed="-1">-1x</button>
+                    <button class="preset-btn" data-speed="0">PAUSE</button>
+                    <button class="preset-btn" data-speed="1">1x</button>
+                    <button class="preset-btn" data-speed="5">5x</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 側邊資訊 -->
+        <div id="info-panel" class="glass interactable">
+            <div class="info-content scroll-container">
+                <div class="info-header">
+                    <div id="planet-tag"></div>
+                    <button id="btn-stop-track" class="stop-btn">停止追蹤</button>
+                </div>
+
+                <img id="planet-image" src="" alt="Planet Image">
+
+                <h2 id="planet-name"></h2>
+
+                <div class="nav-controls">
+                    <button id="btn-prev" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    <button id="btn-next" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                    <div class="flex-spacer"></div>
+                </div>
+
+                <div class="info-sections">
+                    <section>
+                        <h4 class="section-title"><i class="fas fa-atom"></i> 星體檔案</h4>
+                        <p id="planet-desc"></p>
+                    </section>
+
+                    <div class="data-grid">
+                        <div class="data-card">
+                            <span class="data-label">質量比例</span>
+                            <div id="planet-mass" class="data-value"></div>
+                        </div>
+                        <div class="data-card">
+                            <span class="data-label">天文測量數據</span>
+                            <div id="planet-dist" class="data-value"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-footer">
+                <button id="collect-btn">
+                    <i class="fas fa-fingerprint"></i> 掃描地表數據
+                </button>
+                <div class="source-credit">素材來源: NASA</div>
+            </div>
+        </div>
+
+        <!-- 吐司提示 -->
+        <div id="achievement-toast" class="interactable">
+            <div class="toast-icon">
+                <i class="fas fa-satellite"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">遙測數據已接收</div>
+                <div id="achievement-name"></div>
+            </div>
+        </div>
+
+        <div class="system-status">
+            <div class="status-dot"></div>
+            <div class="status-text">核心數據運作中</div>
+        </div>
+    </div>
+
+    <script src="space.js"></script>
+</body>
+
+</html>
